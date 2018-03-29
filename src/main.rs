@@ -4,7 +4,7 @@ use std::env;
 use regex::Regex;
 use std::vec::Vec;
 use std::io::{self, Read};
-use zmq::{Socket, Message};
+use zmq::{Message, Socket};
 
 fn print_help() {
     println!("Usage: zmq-cli (PUB|SUB) tcp://url:port");
@@ -76,10 +76,12 @@ fn handle_pub(socket: Socket, addr: &str) {
         match io::stdin().read_line(&mut buffer) {
             Ok(_) => {
                 let mut split = buffer.split(" ");
-                if let Some(key) = split.next(){   
-                    if let Some(value) = split.next(){
+                if let Some(key) = split.next() {
+                    if let Some(value) = split.next() {
                         let mut sanitized = String::pop(&mut String::from(value.clone()));
-                        socket.send_str(key, zmq::SNDMORE).expect("failed to send key");
+                        socket
+                            .send_str(key, zmq::SNDMORE)
+                            .expect("failed to send key");
                         // flag 0 to indicate it's the last message
                         socket.send_str(value, 0).expect("Failed to send value");
                         println!("Sent message with key {} and value {} ", key, value);
@@ -93,14 +95,24 @@ fn handle_pub(socket: Socket, addr: &str) {
 }
 
 fn handle_sub(socket: Socket, address: &str) {
-    socket.connect(address).expect("Failed to connect to address");
-    socket.set_subscribe("".as_bytes()).expect("Failed to subscribe!");
-    loop{
-        let message = socket.recv_multipart(0).expect("Failed to receive multipart message");
+    socket
+        .connect(address)
+        .expect("Failed to connect to address");
+    socket
+        .set_subscribe("".as_bytes())
+        .expect("Failed to subscribe!");
+    loop {
+        let message = socket
+            .recv_multipart(0)
+            .expect("Failed to receive multipart message");
         let mut parts = message.into_iter();
-        if let Some(key) = parts.next(){
-            if let Some(value) = parts.next(){
-                println!("{:?} - {:?}", String::from_utf8(key).unwrap(), String::from_utf8(value).unwrap());
+        if let Some(key) = parts.next() {
+            if let Some(value) = parts.next() {
+                println!(
+                    "{:?} - {:?}",
+                    String::from_utf8(key).unwrap(),
+                    String::from_utf8(value).unwrap()
+                );
             }
         }
     }
@@ -113,7 +125,7 @@ fn main() {
             let socket = connect_to_socket(addr, pattern).unwrap();
             match pattern {
                 zmq::PUB => {
-                    handle_pub(socket,addr);
+                    handle_pub(socket, addr);
                 }
                 zmq::SUB => {
                     handle_sub(socket, addr);
