@@ -1,0 +1,8 @@
+[package]
+name = "zmq-cli"
+version = "0.1.0"
+authors = ["Carlo Sana <carlo.sana@unicredit.eu>"]
+
+[dependencies]
+zmq = "0.8.2"
+regex = "0.2"
