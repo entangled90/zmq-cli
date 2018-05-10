@@ -1,27 +1,21 @@
 extern crate clap;
 extern crate regex;
 extern crate zmq;
-use std::env;
-use regex::Regex;
-use std::vec::Vec;
-use std::io::{self, Read};
-use zmq::{Message, Socket};
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg};
 
-fn connect_to_socket(address: &str, pattern: zmq::SocketType) -> Result<zmq::Socket, &str> {
+fn prepare_socket(pattern: zmq::SocketType) -> zmq::Socket {
     println!("Connecting to socket");
 
     let ctx = zmq::Context::new();
+    ctx.socket(pattern).unwrap()
 
-    let socket = ctx.socket(pattern).unwrap();
-    Ok(socket)
 }
 
 pub mod zmq_helpers {
 
     pub mod publisher {
-        use std::io::{self, Read};
-        use zmq::{Message, Socket, SNDMORE};
+        use std::io::{self};
+        use zmq::{Socket, SNDMORE};
         pub fn handle_pub(socket: Socket, addr: &str) {
             println!("{:?}", socket.get_events());
             socket.bind(addr).expect("failed to bind");
@@ -48,8 +42,7 @@ pub mod zmq_helpers {
     }
 
     pub mod subscriber {
-        use std::io::{self, Read};
-        use zmq::{Message, Socket};
+        use zmq::Socket;
 
         pub fn handle_sub(socket: Socket, address: &str, parse_as_string: bool) {
             socket
@@ -101,8 +94,6 @@ fn main() {
         )
         .get_matches();
 
-    println!("arg matches {:?}", matches);
-
     let parsed_configuration = matches.value_of("pattern").and_then(|p| {
         matches.value_of("address").map(|a| Configuration {
             pattern: p,
@@ -120,7 +111,7 @@ fn main() {
             _ => panic!("impossible patern found"),
         };
 
-        let socket = connect_to_socket(addr, pattern).unwrap();
+        let socket = prepare_socket(pattern);
         match pattern {
             zmq::PUB => {
                 zmq_helpers::publisher::handle_pub(socket, addr);
